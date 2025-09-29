@@ -10,7 +10,6 @@
 
 struct MyLocationBlock
 {
-    std::string path;
     std::map<std::string, std::vector<std::string> > directives;
 
     std::string root;
@@ -26,7 +25,7 @@ struct MyLocationBlock
 struct MyServerBlock
 {
     std::map<std::string, std::vector<std::string> > m_directives;
-    std::vector<MyLocationBlock> m_locationBlocks;
+    std::map<std::string, MyLocationBlock> m_locationBlocks;
 
     std::string m_root;
     std::string m_cache;
