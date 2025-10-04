@@ -135,7 +135,8 @@ void Client::handle_POST(void)
     std::string Headers = headers_Creator(Response("HTTP/1.1", 201, false, std::string(), 0), 0);
     std::string Locattion_Header = "Location: " + static_cast<std::string>(upload_dir) + filename + "\r\n";
 
-    Headers += Locattion_Header + "\r\n\r\n";
+    Headers += Locattion_Header + "\r\n";
+
     this->m_response_buffer = Headers;
     this->readyto_send = true;
 
