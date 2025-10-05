@@ -301,7 +301,7 @@
                 const contentLength = selectedFile.size;
 
                 // POST to current page URL
-                const response = await fetch(window.location.href, {
+                const response = await fetch('/Upload', {
                     method: 'POST',
                     headers: {
                         'Content-Type': contentType,

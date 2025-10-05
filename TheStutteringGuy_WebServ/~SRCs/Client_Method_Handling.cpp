@@ -1,7 +1,6 @@
 #include "WebServer.hpp"
-#include <cstdio>
-#include <cstring>
-#include <stdexcept>
+#include <algorithm>
+#include <unistd.h>
 
 static std::string getParentPath(const std::string& filepath)
 {
@@ -14,9 +13,11 @@ static std::string getParentPath(const std::string& filepath)
     return parent_path;
 }
 
-void Client::handle_DELETE(void)
+void Client::handle_DELETE(MyLocationBlock &p_locationBlock)
 {
     struct stat test;
+
+    (void)p_locationBlock;
 
     std::string actual_URI(this->m_request.m_URI);
     actual_URI.erase(0, 1);
@@ -37,9 +38,11 @@ void Client::handle_DELETE(void)
     this->response_justAstatus(204);
 }
 
-void Client::handle_GET(void)
+void Client::handle_GET(MyLocationBlock &p_locationBlock)
 {
     struct stat test;
+
+    (void)p_locationBlock;
     
     std::string actual_URI(this->m_request.m_URI);
     actual_URI.erase(0, 1);
@@ -109,8 +112,10 @@ void Client::handle_GET(void)
     }
 }
 
-void Client::handle_POST(void)
+void Client::handle_POST(MyLocationBlock &p_locationBlock)
 {
+    (void)p_locationBlock;
+
     const std::vector<std::string> *content_type = find_Value_inMap(this->m_request.m_headers, "Content-Type");
 
     std::string media_type;
@@ -150,11 +155,52 @@ void Client::handle_POST(void)
 void Client::handle_Request(void)
 {
     this->handling_request = true;
+    std::string tmp_location;
 
+    while (True)
+    {
+        if (this->m_Myserver.m_locationBlocks.find(this->m_request.m_URI) != this->m_Myserver.m_locationBlocks.end())
+        {
+            tmp_location = this->m_request.m_URI;
+            break;
+        }
+
+        std::string tmp;
+        size_t pos = this->m_request.m_URI.find_last_of("/");
+        if (pos != std::string::npos)
+            tmp = this->m_request.m_URI.substr(0, pos);
+
+        if (tmp.empty()) { tmp = "/"; }
+        if (this->m_Myserver.m_locationBlocks.find(tmp) != this->m_Myserver.m_locationBlocks.end())
+        {
+            tmp_location = tmp;
+            break;
+        }
+
+        this->response_Error(404, true);
+    }
+
+    MyLocationBlock &tmp_locationBlock = this->m_Myserver.m_locationBlocks[tmp_location];
+    std::vector<std::string> &tmp_allowedMethods = tmp_locationBlock.allowed_methods;
     if (this->m_request.m_method == "GET")
-        this->handle_GET();
+    {
+        if (std::find(tmp_allowedMethods.begin(), tmp_allowedMethods.end(), "GET") != tmp_allowedMethods.end())
+            this->handle_GET(tmp_locationBlock);
+        else
+            this->response_Error(405, true);
+    }    
     else if (this->m_request.m_method == "POST")
-        this->handle_POST();
+    {
+        if (std::find(tmp_allowedMethods.begin(), tmp_allowedMethods.end(), "POST") != tmp_allowedMethods.end())
+            this->handle_POST(tmp_locationBlock);
+        else
+            this->response_Error(405, true);
+    }    
     else if (this->m_request.m_method == "DELETE")
-        this->handle_DELETE();
+    {
+        if (std::find(tmp_allowedMethods.begin(), tmp_allowedMethods.end(), "DELETE") != tmp_allowedMethods.end())
+            this->handle_DELETE(tmp_locationBlock);
+        else
+            this->response_Error(405, true);
+    }
 }

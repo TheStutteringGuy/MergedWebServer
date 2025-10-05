@@ -212,9 +212,9 @@ public:
     void            handle_Response(void);
 
 private:
-    void            handle_GET(void);
-    void            handle_POST(void);
-    void            handle_DELETE(void);
+    void            handle_GET(MyLocationBlock &p_locationBlock);
+    void            handle_POST(MyLocationBlock &p_locationBlock);
+    void            handle_DELETE(MyLocationBlock &p_locationBlock);
     void            response_Get(const std::string& File);
     void            response_justAstatus(const unsigned int &status_code);
     void            response_Creator(const unsigned int &status_code, const bool& content_needed, const std::string& content_type, const std::string &body);
