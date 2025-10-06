@@ -222,16 +222,16 @@ void ConfigProcessor::setDefaultValue(ServerBlock &server)
     // }
     if (server.server_name.empty())
         server.server_name = "localhost";
-    if (server.index.empty())
-        server.index = "index.html";
+    // if (server.index.empty())
+    //     server.index = "index.html";
 };
 
 void ConfigProcessor::setLocation(LocationBlock &location, const ServerBlock &server)
 {
     if (location.root.empty())
         location.root = server.root; // here if the root of the location block is empty i inherit it from the serever root
-    if (location.index.empty())
-        location.index = server.index; // the same thing here too
+    // if (location.index.empty())
+    //     location.index = server.index; // the same thing here too
     if (location.allowed_methods.empty())
     {
         location.allowed_methods.push_back("GET");

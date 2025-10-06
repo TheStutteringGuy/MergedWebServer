@@ -1,0 +1,4 @@
+check root 
+check index 
+check autoindex
+check errors_pages

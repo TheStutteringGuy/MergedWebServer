@@ -1,9 +1,18 @@
 #include "WebServer.hpp"
+#include <exception>
 
 void Client::response_Error(const unsigned int &error_code, bool Content_needed)
 {
     std::string body;
     std::string Headers;
+
+    try 
+    {
+        if (this->m_Myserver.m_error_pages.find(error_code) != this->m_Myserver.m_error_pages.end())
+            this->response_Get(this->m_Myserver.m_root + this->m_Myserver.m_error_pages[error_code]);
+    }
+    catch (std::exception &e) {}
+    catch (...) {}
 
     if (Content_needed == true)
     {

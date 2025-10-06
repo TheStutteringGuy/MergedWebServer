@@ -21,7 +21,7 @@ void Client::handle_DELETE(MyLocationBlock &p_locationBlock)
 
     std::string actual_URI(this->m_request.m_URI);
     actual_URI.erase(0, 1);
-    actual_URI.insert(0, this->m_Myserver.m_root);
+    actual_URI.insert(0, p_locationBlock.root);
 
     if (access(actual_URI.c_str(), F_OK) != 0)
         this->response_Error(404, true);
@@ -46,7 +46,7 @@ void Client::handle_GET(MyLocationBlock &p_locationBlock)
     
     std::string actual_URI(this->m_request.m_URI);
     actual_URI.erase(0, 1);
-    actual_URI.insert(0, this->m_Myserver.m_root);
+    actual_URI.insert(0, p_locationBlock.root);
 
     if (access(actual_URI.c_str(), F_OK) != 0)
         this->response_Error(404, true);
@@ -54,54 +54,67 @@ void Client::handle_GET(MyLocationBlock &p_locationBlock)
     stat(actual_URI.c_str(), &test);
     if (S_ISDIR(test.st_mode))
     {
-        // listing the directory
-        if (this->m_request.m_URI[this->m_request.m_URI.size() - 1] != '/')
+        std::cout << "INDEX =======> "<<  p_locationBlock.index << std::endl;
+
+        if (!p_locationBlock.index.empty())
         {
-            this->m_request.m_URI.append("/");
-            actual_URI.append("/");
+            if (access((p_locationBlock.root + p_locationBlock.index).c_str(), F_OK | R_OK) != 0)
+                this->response_Error(404, true);
+            this->response_Get((p_locationBlock.root + p_locationBlock.index));
         }
-
-        if (access(actual_URI.c_str(), R_OK | X_OK) != 0)
-            this->response_Error(403, true);
-
-        DIR* dir_ptr;
-        struct dirent *entry;
-
-        dir_ptr = opendir(actual_URI.c_str());
-        if (NULL == dir_ptr)
-            this->response_Error(503, true);
-
-        std::string to_send;
-        std::string s = " ";
-        std::string end = "\n";
-
-        to_send = generic_index_page(this->m_request.m_URI);
-
-        size_t pos = to_send.find("INSERT HERE");
-        if (pos != std::string::npos)
-            to_send.erase(pos, static_cast<std::string>("INSERT HERE").size());
-        while ((entry = readdir(dir_ptr)) != NULL)
+        else if (p_locationBlock.autoindex == true)
         {
-            if (entry->d_name[0] != '.')
+            // listing the directory
+            if (this->m_request.m_URI[this->m_request.m_URI.size() - 1] != '/')
             {
-                if (entry->d_type == DT_DIR)
+                this->m_request.m_URI.append("/");
+                actual_URI.append("/");
+            }
+    
+            if (access(actual_URI.c_str(), R_OK | X_OK) != 0)
+                this->response_Error(403, true);
+    
+            DIR* dir_ptr;
+            struct dirent *entry;
+    
+            dir_ptr = opendir(actual_URI.c_str());
+            if (NULL == dir_ptr)
+                this->response_Error(503, true);
+    
+            std::string to_send;
+            std::string s = " ";
+            std::string end = "\n";
+    
+            to_send = generic_index_page(this->m_request.m_URI);
+    
+            size_t pos = to_send.find("INSERT HERE");
+            if (pos != std::string::npos)
+                to_send.erase(pos, static_cast<std::string>("INSERT HERE").size());
+            while ((entry = readdir(dir_ptr)) != NULL)
+            {
+                if (entry->d_name[0] != '.')
                 {
-                    std::stringstream ss;
-                    ss << "            <li><a href=\"" << this->m_request.m_URI + entry->d_name << "/\">" << entry->d_name << '/' << "</a></li>" << end;
-                    to_send.insert(pos, ss.str());
-                    pos += ss.str().size();
-                }
-                else if (entry->d_type == DT_REG)
-                {
-                    std::stringstream ss;
-                    ss << "            <li><a href=\"" << this->m_request.m_URI + entry->d_name << "\" class=\"file-link\">" << entry->d_name << "</a></li>" << end;
-                    to_send.insert(pos, ss.str());
-                    pos += ss.str().size();
+                    if (entry->d_type == DT_DIR)
+                    {
+                        std::stringstream ss;
+                        ss << "            <li><a href=\"" << this->m_request.m_URI + entry->d_name << "/\">" << entry->d_name << '/' << "</a></li>" << end;
+                        to_send.insert(pos, ss.str());
+                        pos += ss.str().size();
+                    }
+                    else if (entry->d_type == DT_REG)
+                    {
+                        std::stringstream ss;
+                        ss << "            <li><a href=\"" << this->m_request.m_URI + entry->d_name << "\" class=\"file-link\">" << entry->d_name << "</a></li>" << end;
+                        to_send.insert(pos, ss.str());
+                        pos += ss.str().size();
+                    }
                 }
             }
+            closedir(dir_ptr);
+            this->response_html_ready(to_send);
         }
-        closedir(dir_ptr);
-        this->response_html_ready(to_send);
+        else
+            this->response_Error(500, true);
     }
     else
     {
@@ -182,6 +195,10 @@ void Client::handle_Request(void)
 
     MyLocationBlock &tmp_locationBlock = this->m_Myserver.m_locationBlocks[tmp_location];
     std::vector<std::string> &tmp_allowedMethods = tmp_locationBlock.allowed_methods;
+
+    if (tmp_locationBlock.root.empty())
+        tmp_locationBlock.root = this->m_Myserver.m_root;
+
     if (this->m_request.m_method == "GET")
     {
         if (std::find(tmp_allowedMethods.begin(), tmp_allowedMethods.end(), "GET") != tmp_allowedMethods.end())

@@ -39,7 +39,8 @@ static std::map<std::string, MyLocationBlock> handle_LocationBlocks(std::vector<
         tmp[locationBlocks[index].path];
 
         tmp[locationBlocks[index].path].directives = directives_tomap(locationBlocks[index].directives);
-        tmp[locationBlocks[index].path].root = locationBlocks[index].root;
+        tmp[locationBlocks[index].path].root = root_check(locationBlocks[index].root);
+        tmp[locationBlocks[index].path].index = locationBlocks[index].index;
         tmp[locationBlocks[index].path].autoindex = locationBlocks[index].autoindex;
         tmp[locationBlocks[index].path].allowed_methods = locationBlocks[index].allowed_methods;
         tmp[locationBlocks[index].path].redirect_url = locationBlocks[index].redirect_url;
@@ -62,7 +63,5 @@ void API::ServerBlock_Parser(std::vector<ServerBlock> &servers_blocks)
         ref[index].m_root = root_check(servers_blocks[index].root);
         ref[index].m_error_pages = servers_blocks[index].error_pages;
         ref[index].m_directives = directives_tomap(servers_blocks[index].directives);
-        // ref[index].m_index_def = servers_blocks[index].index;
-        // ref[index].m_autoindex_def = servers_blocks[index];
     }
 };
